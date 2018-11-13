@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.http.client.fluent.Request;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class Main {
 
@@ -36,10 +38,6 @@ public class Main {
         String url = "https://studies.cs.helsinki.fi/courses/students/" + studentNr + "/submissions";
         try {
             String bodyText = Request.Get(url).execute().returnContent().asString();
-
-//            System.out.println("json-muotoinen data:");
-//            System.out.println(bodyText);
-//            System.out.println("");
             Gson mapper = new Gson();
             Submission[] subs = mapper.fromJson(bodyText, Submission[].class);
             return subs;
@@ -53,10 +51,6 @@ public class Main {
         String url = "https://studies.cs.helsinki.fi/courses/courseinfo";
         try {
             String bodyText = Request.Get(url).execute().returnContent().asString();
-
-//            System.out.println("json-muotoinen data:");
-//            System.out.println(bodyText);
-//            System.out.println("");
             Gson mapper = new Gson();
             Course[] courses = mapper.fromJson(bodyText, Course[].class);
             return courses;
@@ -101,6 +95,7 @@ public class Main {
             }
             System.out.println("\nyhteensä: " + exercisesDone + "/"
                     + totalExercises + " tehtävää " + totalHours + " tuntia");
+            System.out.println("\n" + kaikkienPalautustenTiedot(course));
         }
 
     }
@@ -121,5 +116,43 @@ public class Main {
         }
         return null;
     }
+    
+    private static String kaikkienPalautustenTiedot(Course course) {
+        // haetaan kurssin statistiikka
+        JsonObject parsittuData = haeKurssinStatistiikka(course.getName());
+        if (parsittuData == null) {
+            return null;
+        }
+        
+        int palautukset = 0;
+        int tehtavat = 0;
+        int tunnit = 0;
+       
+        for(String key : parsittuData.keySet()) {
+            JsonObject object = parsittuData.get(key).getAsJsonObject();
+            palautukset += object.get("students").getAsInt();
+            tehtavat += object.get("exercise_total").getAsInt();
+            tunnit += object.get("hour_total").getAsDouble();
+        }
+        
+        String mj = "kurssilla on yhteensä " + palautukset + " palautusta,";
+        mj += " palautettuja tehtäviä " + tehtavat + " kpl, aikaa käytetty";
+        mj += " yhteensä " + tunnit + " tuntia";
+        return mj;
+    }
 
+    private static JsonObject haeKurssinStatistiikka(String coursename) {
+        String url = "https://studies.cs.helsinki.fi/courses/" + coursename + "/stats";
+        try {
+            String statsResponse = Request.Get(url).execute().returnContent().asString();
+            JsonParser parser = new JsonParser();
+            JsonObject parsittuData = parser.parse(statsResponse).getAsJsonObject();
+            return parsittuData;
+        } catch (Exception e) {
+            // ei onnistunut
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
 }
