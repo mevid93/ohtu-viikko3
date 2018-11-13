@@ -42,10 +42,7 @@ public class Submission {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append(course + ",");
-        builder.append(" viikko " + week);
-        builder.append(" tehtyjä tehtäviä yhteensä " + exercises.length);
-        builder.append(" aikaa kului " + hours);
+        builder.append("aikaa kului " + hours);
         builder.append(" tehdyt tehtävät: " + tehdytTehtavat());
         return builder.toString();
     }
